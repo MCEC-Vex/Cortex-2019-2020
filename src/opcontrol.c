@@ -233,8 +233,8 @@ void operatorControl()
         }
 
         // Set the arm motors
-        motorSet(RIGHT_ARM, round(liftPower));
-        motorSet(LEFT_ARM, round(liftPower));
+        motorSet(RIGHT_ARM, liftPower);
+        motorSet(LEFT_ARM, liftPower);
 
         delay(20);
     }
