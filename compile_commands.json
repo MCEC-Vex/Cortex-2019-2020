@@ -1,0 +1,74 @@
+[
+ {
+  "directory": "C:\\Users\\Techdoodle\\Documents\\c\\PROS\\atom-claw",
+  "arguments": [
+   "arm-none-eabi-gcc",
+   "-c",
+   "-isystem./include",
+   "-iquote./include/./",
+   "-mthumb",
+   "-mcpu=cortex-m3",
+   "-mlittle-endian",
+   "-Os",
+   "-ffunction-sections",
+   "-fsigned-char",
+   "-fomit-frame-pointer",
+   "-fsingle-precision-constant",
+   "-fdiagnostics-color",
+   "-std=gnu99",
+   "-o",
+   "bin/auto.c.o",
+   "src/auto.c",
+   "temp.log"
+  ],
+  "file": "src/auto.c"
+ },
+ {
+  "directory": "C:\\Users\\Techdoodle\\Documents\\c\\PROS\\atom-claw",
+  "arguments": [
+   "arm-none-eabi-gcc",
+   "-c",
+   "-isystem./include",
+   "-iquote./include/./",
+   "-mthumb",
+   "-mcpu=cortex-m3",
+   "-mlittle-endian",
+   "-Os",
+   "-ffunction-sections",
+   "-fsigned-char",
+   "-fomit-frame-pointer",
+   "-fsingle-precision-constant",
+   "-fdiagnostics-color",
+   "-std=gnu99",
+   "-o",
+   "bin/init.c.o",
+   "src/init.c",
+   "temp.log"
+  ],
+  "file": "src/init.c"
+ },
+ {
+  "directory": "C:\\Users\\Techdoodle\\Documents\\c\\PROS\\atom-claw",
+  "arguments": [
+   "arm-none-eabi-gcc",
+   "-c",
+   "-isystem./include",
+   "-iquote./include/./",
+   "-mthumb",
+   "-mcpu=cortex-m3",
+   "-mlittle-endian",
+   "-Os",
+   "-ffunction-sections",
+   "-fsigned-char",
+   "-fomit-frame-pointer",
+   "-fsingle-precision-constant",
+   "-fdiagnostics-color",
+   "-std=gnu99",
+   "-o",
+   "bin/opcontrol.c.o",
+   "src/opcontrol.c",
+   "temp.log"
+  ],
+  "file": "src/opcontrol.c"
+ }
+]
