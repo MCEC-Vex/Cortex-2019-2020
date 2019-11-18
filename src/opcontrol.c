@@ -195,23 +195,31 @@ void operatorControl()
         // Change power based on distance to travel
         // These will likely need to be fine-tuned for real-world performance
         // TODO evaluate effectiveness of this approach vs calculating speed of travel or a combination of speed and distance
-        if(absolutePositionDiff < 500)
+        if(currentPos < ARM_LOWER_BOUND + (IDEAL_ARM_INCREMENT * 3))
         {
-            // Adds 0.1 or subtracts 0.1
-            liftPower += sign(positionDiff) * 0.1;
-        }
-        else if(absolutePositionDiff < 1500)
-        {
-            // Adds 2 or subtracts 2
-            liftPower += sign(positionDiff) * 1;
-        }
-        else if(absolutePositionDiff < 2500)
-        {
-            liftPower += sign(positionDiff) * 3;
+            // Don't slam the arm into the starting pos in case the sensor can't reach a perfect 0
+            liftPower = 0;
         }
         else
         {
-            liftPower += sign(positionDiff) * 5;
+            if(absolutePositionDiff < 500)
+            {
+                // Adds 0.1 or subtracts 0.1
+                liftPower += sign(positionDiff) * 0.1;
+            }
+            else if(absolutePositionDiff < 1500)
+            {
+                // Adds 2 or subtracts 2
+                liftPower += sign(positionDiff) * 1;
+            }
+            else if(absolutePositionDiff < 2500)
+            {
+                liftPower += sign(positionDiff) * 3;
+            }
+            else
+            {
+                liftPower += sign(positionDiff) * 5;
+            }
         }
 
         // Ensure repetitive adding during travel doesn't create *too* much "voltage momentum"
@@ -227,8 +235,6 @@ void operatorControl()
         // Set the arm motors
         motorSet(RIGHT_ARM, round(liftPower));
         motorSet(LEFT_ARM, round(liftPower));
-
-        motorS
 
         delay(20);
     }
