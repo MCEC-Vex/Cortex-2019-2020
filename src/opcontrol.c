@@ -42,12 +42,14 @@
 #define RIGHT_ARM 9
 #define LEFT_ARM 10
 
+#define BACKUP_SPEED 70
+
 // Contributes every 20ms to a max of 4096
-#define IDEAL_ARM_INCREMENT 40
+#define IDEAL_ARM_INCREMENT 30
 
 // Bounds for the arm (with calibration, the lowered state is 0)
 #define ARM_LOWER_BOUND 0
-#define ARM_UPPER_BOUND 3000
+#define ARM_UPPER_BOUND 4000
 
 /**
  * Convenience function to get the sign of an integer while avoiding branches
@@ -61,6 +63,47 @@ int sign(int x)
     return (x > 0) - (x < 0);
 }
 
+/**
+ * This function sets the motor power for the right and left side of the robot
+ * @param left The left motor voltage. -127 to 127
+ * @param right The right motor voltage. -127 to 127
+ */
+void setMotorPower(int left, int right)
+{
+    motorSet(LEFT_MOTOR_FRONT, left);
+    motorSet(LEFT_MOTOR_BACK, left);
+    motorSet(RIGHT_MOTOR_FRONT, right * -1); // Multiply right side by -1 because
+    motorSet(RIGHT_MOTOR_BACK, right * -1); //  the motors are facing the opposite direction
+}
+
+void dropOffCubes()
+{
+    // Move the tray all the way up
+    motorSet(TRAY, 127);
+    delay(800);
+    motorSet(TRAY, 0);
+
+    delay(2000);
+
+    // Bump the robot forward
+    setMotorPower(60, 60);
+    delay(100);
+    setMotorPower(-60, -60);
+    delay(100);
+    setMotorPower(0, 0);
+
+    delay(2000);
+
+    // Back up and roll out
+    motorSet(RIGHT_ROLLER, 80);
+    motorSet(LEFT_ROLLER, -80);
+    setMotorPower(BACKUP_SPEED * -1, BACKUP_SPEED * -1);
+    delay(700);
+    motorSet(RIGHT_ROLLER, 0);
+    motorSet(LEFT_ROLLER, 0);
+    setMotorPower(0, 0);
+}
+
 void operatorControl()
 {
     int forwardPower;
@@ -72,6 +115,7 @@ void operatorControl()
 
     float liftPower = 0;
     int idealLiftPos = 0;
+    //char upPressed = 0;
 
     while(1)
     {
@@ -96,10 +140,7 @@ void operatorControl()
         int rightPower = forwardPower - turningPower;
 
         // Set the drive motors
-        motorSet(LEFT_MOTOR_FRONT, leftPower);
-        motorSet(LEFT_MOTOR_BACK, leftPower);
-        motorSet(RIGHT_MOTOR_FRONT, rightPower * -1); // Multiply right side by -1 because
-        motorSet(RIGHT_MOTOR_BACK, rightPower * -1); //  the motors are facing the opposite direction
+        setMotorPower(leftPower, rightPower);
 
         // Roller motors (make one side negative so they both spin in the same direction)
         if(joystickGetDigital(JOYSTICK_MASTER, 6, JOY_UP))
@@ -110,8 +151,8 @@ void operatorControl()
         else if(joystickGetDigital(JOYSTICK_MASTER, 6, JOY_DOWN))
         {
             // Make the rollers go slower when releasing cubes for precision moves
-            motorSet(RIGHT_ROLLER, 80);
-            motorSet(LEFT_ROLLER, -80);
+            motorSet(RIGHT_ROLLER, 60);
+            motorSet(LEFT_ROLLER, -60);
         }
         else
         {
@@ -142,8 +183,7 @@ void operatorControl()
 
         // Intake arm
         //TODO use manual override in case new algorithm fails miserably during competition
-        /*
-        if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_UP))
+        /*if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_UP))
         {
             motorSet(RIGHT_ARM, -127);
             motorSet(LEFT_ARM, -127);
@@ -165,7 +205,7 @@ void operatorControl()
         // TODO set proper bounds based on sensor testing
         if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_UP))
         {
-            if(idealLiftPos + IDEAL_ARM_INCREMENT > ARM_UPPER_BOUND)
+            if((idealLiftPos + IDEAL_ARM_INCREMENT) > ARM_UPPER_BOUND)
             {
                 idealLiftPos = ARM_UPPER_BOUND;
             }
@@ -176,7 +216,7 @@ void operatorControl()
         }
         else if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_DOWN))
         {
-            if(idealLiftPos - IDEAL_ARM_INCREMENT < ARM_LOWER_BOUND)
+            if((idealLiftPos - IDEAL_ARM_INCREMENT) < ARM_LOWER_BOUND)
             {
                 idealLiftPos = ARM_LOWER_BOUND;
             }
@@ -190,51 +230,36 @@ void operatorControl()
         // Note: this can be negative (-4096 to 4096 theoretically for full 250 degree arm motion)
         int currentPos = analogReadCalibrated(ARM_POTENTIOMETER);
         int positionDiff = idealLiftPos - currentPos;
-        int absolutePositionDiff = abs(positionDiff);
-
-        // Change power based on distance to travel
-        // These will likely need to be fine-tuned for real-world performance
-        // TODO evaluate effectiveness of this approach vs calculating speed of travel or a combination of speed and distance
-        if(currentPos < ARM_LOWER_BOUND + (IDEAL_ARM_INCREMENT * 3))
-        {
-            // Don't slam the arm into the starting pos in case the sensor can't reach a perfect 0
-            liftPower = 0;
-        }
-        else
-        {
-            if(absolutePositionDiff < 500)
-            {
-                // Adds 0.1 or subtracts 0.1
-                liftPower += sign(positionDiff) * 0.1;
-            }
-            else if(absolutePositionDiff < 1500)
-            {
-                // Adds 2 or subtracts 2
-                liftPower += sign(positionDiff) * 1;
-            }
-            else if(absolutePositionDiff < 2500)
-            {
-                liftPower += sign(positionDiff) * 3;
-            }
-            else
-            {
-                liftPower += sign(positionDiff) * 5;
-            }
-        }
-
-        // Ensure repetitive adding during travel doesn't create *too* much "voltage momentum"
-        if(liftPower > 127)
-        {
-            liftPower = 127;
-        }
-        else if(liftPower < -127)
-        {
-            liftPower = -127;
-        }
+        int proportional = positionDiff * 0.1;
 
         // Set the arm motors
-        motorSet(RIGHT_ARM, liftPower);
-        motorSet(LEFT_ARM, liftPower);
+        motorSet(RIGHT_ARM, proportional * -1);
+        motorSet(LEFT_ARM, proportional * -1);
+
+        // Reset on the left key
+        if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_LEFT))
+        {
+            idealLiftPos = ARM_LOWER_BOUND;
+        }
+
+        // Back up and turn rollers out
+        if(joystickGetDigital(JOYSTICK_MASTER, 8, JOY_DOWN))
+        {
+            motorSet(RIGHT_ROLLER, 80);
+            motorSet(LEFT_ROLLER, -80);
+
+
+            motorSet(LEFT_MOTOR_FRONT, BACKUP_SPEED * -1);
+            motorSet(LEFT_MOTOR_BACK, BACKUP_SPEED * -1);
+            motorSet(RIGHT_MOTOR_FRONT, BACKUP_SPEED);
+            motorSet(RIGHT_MOTOR_BACK, BACKUP_SPEED);
+        }
+
+        // Drop off cubes macro
+        if(joystickGetDigital(JOYSTICK_MASTER, 8, JOY_RIGHT))
+        {
+            dropOffCubes();
+        }
 
         delay(20);
     }
