@@ -18,8 +18,7 @@
    "-std=gnu99",
    "-o",
    "bin/auto.c.o",
-   "src/auto.c",
-   "temp.log"
+   "src/auto.c"
   ],
   "file": "src/auto.c"
  },
@@ -42,8 +41,7 @@
    "-std=gnu99",
    "-o",
    "bin/init.c.o",
-   "src/init.c",
-   "temp.log"
+   "src/init.c"
   ],
   "file": "src/init.c"
  },
@@ -66,9 +64,9 @@
    "-std=gnu99",
    "-o",
    "bin/opcontrol.c.o",
-   "src/opcontrol.c",
-   "temp.log"
+   "src/opcontrol.c"
   ],
   "file": "src/opcontrol.c"
  }
-]
+]
+

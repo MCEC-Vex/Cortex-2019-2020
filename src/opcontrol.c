@@ -108,14 +108,10 @@ void operatorControl()
 {
     int forwardPower;
     int turningPower;
-    int analogOut;
 
     // For the tray
     int liftPowerScale = 0;
-
-    float liftPower = 0;
     int idealLiftPos = 0;
-    //char upPressed = 0;
 
     while(1)
     {
@@ -226,15 +222,11 @@ void operatorControl()
             }
         }
 
-        // Get difference in (angular) position
-        // Note: this can be negative (-4096 to 4096 theoretically for full 250 degree arm motion)
-        int currentPos = analogReadCalibrated(ARM_POTENTIOMETER);
-        int positionDiff = idealLiftPos - currentPos;
-        int proportional = positionDiff * 0.1;
-
+        // Get difference in (angular) position for proportional applied voltage
+        int proportional = (idealLiftPos - analogReadCalibrated(ARM_POTENTIOMETER)) * -0.1;
         // Set the arm motors
-        motorSet(RIGHT_ARM, proportional * -1);
-        motorSet(LEFT_ARM, proportional * -1);
+        motorSet(RIGHT_ARM, proportional);
+        motorSet(LEFT_ARM, proportional);
 
         // Reset on the left key
         if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_LEFT))
