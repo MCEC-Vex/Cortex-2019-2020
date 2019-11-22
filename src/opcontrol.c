@@ -27,7 +27,6 @@
  * This task should never exit; it should end with some kind of infinite loop, even if empty.
  */
 
-#define LOOP_DELAY 20
 #define JOYSTICK_MASTER 1
 
 // Define motor ports
@@ -35,13 +34,13 @@
 #define LEFT_MOTOR_BACK 4
 #define RIGHT_MOTOR_FRONT 2
 #define RIGHT_MOTOR_BACK 3
-
 #define TRAY 6
 #define RIGHT_ROLLER 7
 #define LEFT_ROLLER 8
 #define RIGHT_ARM 9
 #define LEFT_ARM 10
 
+// Voltage for backing up drive motors
 #define BACKUP_SPEED 70
 
 // Contributes every 20ms to a max of 4096
@@ -76,20 +75,27 @@ void setMotorPower(int left, int right)
     motorSet(RIGHT_MOTOR_BACK, right * -1); //  the motors are facing the opposite direction
 }
 
+/**
+ * Macro function to (attempt to) drop off the stack of cubes the robot is currently holding
+ */
 void dropOffCubes()
 {
     // Move the tray all the way up
-    motorSet(TRAY, 127);
-    delay(800);
+    for(int i = 127; i >= 30; i -= 2)
+    {
+        motorSet(TRAY, i);
+        delay(20);
+    }
+
     motorSet(TRAY, 0);
 
     delay(2000);
 
     // Bump the robot forward
     setMotorPower(60, 60);
-    delay(100);
+    delay(200);
     setMotorPower(-60, -60);
-    delay(100);
+    delay(200);
     setMotorPower(0, 0);
 
     delay(2000);
@@ -223,10 +229,24 @@ void operatorControl()
         }
 
         // Get difference in (angular) position for proportional applied voltage
-        int proportional = (idealLiftPos - analogReadCalibrated(ARM_POTENTIOMETER)) * -0.1;
+        int currentPos = analogReadCalibrated(ARM_POTENTIOMETER);
+        int proportional = (idealLiftPos - currentPos) * -0.1;
         // Set the arm motors
         motorSet(RIGHT_ARM, proportional);
         motorSet(LEFT_ARM, proportional);
+
+        // Set the tray motor so it doesn't interfere with the arms
+        /*if(idealLiftPos != ARM_LOWER_BOUND)
+        {
+            if(currentPos < 500)
+            {
+                motorSet(TRAY, sign(proportional) * -127);
+            }
+            else
+            {
+                motorSet(TRAY, 0);
+            }
+        }*/
 
         // Reset on the left key
         if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_LEFT))
