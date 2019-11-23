@@ -115,9 +115,10 @@ void operatorControl()
     int forwardPower;
     int turningPower;
 
-    // For the tray
-    int liftPowerScale = 0;
+    // For the arms
     int idealLiftPos = 0;
+
+    int trayIsCurrentlyFullPower = 0;
 
     while(1)
     {
@@ -165,21 +166,28 @@ void operatorControl()
         // Tray
         if(joystickGetDigital(JOYSTICK_MASTER, 5, JOY_UP))
         {
-            if(liftPowerScale < 60)
+            // Cycle between full power (for torque) and 40 power (for slowness)
+            if(trayIsCurrentlyFullPower == 0)
             {
-                liftPowerScale++;
+                motorSet(TRAY, 127);
+                trayIsCurrentlyFullPower = 1;
             }
-
-            motorSet(TRAY, ((127.0 / 88.0) * (89 - liftPowerScale)));
+            else
+            {
+                motorSet(TRAY, 40);
+                trayIsCurrentlyFullPower++;
+                if(trayIsCurrentlyFullPower > 3)
+                {
+                    trayIsCurrentlyFullPower = 0;
+                }
+            }
         }
         else if(joystickGetDigital(JOYSTICK_MASTER, 5, JOY_DOWN))
         {
-            liftPowerScale = 0;
             motorSet(TRAY, -127);
         }
         else
         {
-            liftPowerScale = 0;
             motorSet(TRAY, 0);
         }
 
