@@ -40,6 +40,8 @@
 #define RIGHT_ARM 9
 #define LEFT_ARM 10
 
+#define LIGHT_PORT 1
+
 // Voltage for backing up drive motors
 #define BACKUP_SPEED 70
 
@@ -110,6 +112,29 @@ void dropOffCubes()
     setMotorPower(0, 0);
 }
 
+#define NOP __asm__ __volatile__ ("nop\n\t")
+#define T0H NOP;
+#define T0L NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;NOP;
+
+void attemptLight()
+{
+    digitalWrite(LIGHT_PORT, LOW);
+    // Delay 50us (at 90MHz) = 4500 NOP's
+    delayMicroseconds(51);
+    //delay(1000);
+    digitalWrite(LIGHT_PORT, HIGH);
+
+    // Write out 48 0's
+    for(char i = 0; i < 48; i++)
+    {
+        digitalWrite(LIGHT_PORT, HIGH);
+        T0H
+        digitalWrite(LIGHT_PORT, LOW);
+        T0L
+    }
+    digitalWrite(LIGHT_PORT, HIGH);
+}
+
 void operatorControl()
 {
     int forwardPower;
@@ -119,6 +144,8 @@ void operatorControl()
     int idealLiftPos = 0;
 
     int trayIsCurrentlyFullPower = 0;
+
+    bool debugButtonPressed = false;
 
     while(1)
     {
@@ -243,19 +270,6 @@ void operatorControl()
         motorSet(RIGHT_ARM, proportional);
         motorSet(LEFT_ARM, proportional);
 
-        // Set the tray motor so it doesn't interfere with the arms
-        /*if(idealLiftPos != ARM_LOWER_BOUND)
-        {
-            if(currentPos < 500)
-            {
-                motorSet(TRAY, sign(proportional) * -127);
-            }
-            else
-            {
-                motorSet(TRAY, 0);
-            }
-        }*/
-
         // Reset on the left key
         if(joystickGetDigital(JOYSTICK_MASTER, 7, JOY_LEFT))
         {
@@ -281,7 +295,20 @@ void operatorControl()
             dropOffCubes();
         }
 
+        if(!debugButtonPressed && joystickGetDigital(JOYSTICK_MASTER, 8, JOY_UP))
+        {
+            motorSet(1, 127);
+            debugButtonPressed = true;
+        }
+
+        if(debugButtonPressed && !joystickGetDigital(JOYSTICK_MASTER, 8, JOY_UP))
+        {
+            motorSet(1, 0);
+            debugButtonPressed = false;
+
+            attemptLight();
+        }
+
         delay(20);
     }
 }
-//push test 11.22.19_2
